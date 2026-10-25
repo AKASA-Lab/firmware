@@ -1,33 +1,41 @@
-// Aeroponic misting controller — single pump test
-// Relay board is active-LOW: LOW = pump ON
+// Aeroponic misting controller — 8 pumps, sequential
+// Relay board is active-LOW: LOW = pump ON, HIGH = pump OFF
 
-#define PUMP_PIN 13
+const int PUMPS[8] = {13, 4, 18, 19, 21, 22, 23, 27};
 
-const unsigned long MIST_MS  = 5000;    // 5 seconds spray
-const unsigned long PAUSE_MS = 235000;  // 235 s pause = 4 min cycle
+const unsigned long MIST_MS = 15000;    // 15 s spray per bucket
+const unsigned long GAP_MS  = 22500;    // 22.5 s gap -> 5 min full cycle
 
-unsigned long cycleCount = 0;
+unsigned long cycle = 0;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PUMP_PIN, OUTPUT);
-  digitalWrite(PUMP_PIN, HIGH);   // ensure OFF at boot
-  delay(3000);                    // settle before first spray
+
+  for (int i = 0; i < 8; i++) {
+    pinMode(PUMPS[i], OUTPUT);
+    digitalWrite(PUMPS[i], HIGH);      // every pump off before anything else
+  }
+
+  delay(5000);                         // settle before the first spray
   Serial.println("Misting controller started");
 }
 
 void loop() {
-  cycleCount++;
-
-  digitalWrite(PUMP_PIN, LOW);
-  Serial.print("Cycle ");
-  Serial.print(cycleCount);
-  Serial.print(" — spray ON at ");
+  cycle++;
+  Serial.print("=== cycle ");
+  Serial.print(cycle);
+  Serial.print(" at ");
   Serial.print(millis() / 1000);
   Serial.println(" s");
-  delay(MIST_MS);
 
-  digitalWrite(PUMP_PIN, HIGH);
-  Serial.println("Spray OFF");
-  delay(PAUSE_MS);
+  for (int i = 0; i < 8; i++) {
+    digitalWrite(PUMPS[i], LOW);
+    Serial.print("  bucket ");
+    Serial.print(i + 1);
+    Serial.println(" spraying");
+    delay(MIST_MS);
+
+    digitalWrite(PUMPS[i], HIGH);
+    delay(GAP_MS);
+  }
 }
